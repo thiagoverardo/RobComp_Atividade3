@@ -3,7 +3,7 @@
 # python3 object_detection_dog.py --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
 # Credits: https://www.pyimagesearch.com/2017/09/11/object-detection-with-deep-learning-and-opencv/
 
-print("Para executar:\npython object_detection_webcam.py --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel")
+print("Para executar:\npython object_detection_dog.py --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel")
 
 # import the necessary packages
 import numpy as np

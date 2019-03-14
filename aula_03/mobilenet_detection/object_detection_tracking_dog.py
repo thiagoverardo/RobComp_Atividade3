@@ -3,7 +3,7 @@
 # python3 object_detection_tracking_dog.py --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
 # Credits: https://www.pyimagesearch.com/2017/09/11/object-detection-with-deep-learning-and-opencv/
 
-print("Para executar:\npython object_detection_webcam.py --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel")
+print("Para executar:\npython3 object_detection_tracking_dog.py --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel")
 
 # import the necessary packages
 from imutils.video import VideoStream
@@ -22,55 +22,9 @@ ap.add_argument("-m", "--model", required=True,
     help="path to Caffe pre-trained model")
 ap.add_argument("-c", "--confidence", type=float, default=0.2,
     help="minimum probability to filter weak detections")
-ap.add_argument("-v", "--video", type=str,
-    help="path to input video file")
 ap.add_argument("-t", "--tracker", type=str, default="kcf",
     help="OpenCV object tracker type")
 args = vars(ap.parse_args())
-
-# initialize the list of class labels MobileNet SSD was trained to
-# detect, then generate a set of bounding box colors for each class
-CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
-    "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
-    "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
-    "sofa", "train", "tvmonitor"]
-COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
-
-# load our serialized model from disk
-print("[INFO] loading model...")
-net = cv2.dnn.readNetFromCaffe(args["prototxt"], args["model"])
-
-(major, minor) = cv2.__version__.split(".")[:2]
-
-# if we are using OpenCV 3.2 OR BEFORE, we can use a special factory
-# function to create our object tracker
-if int(major) == 3 and int(minor) < 3:
-    tracker = cv2.Tracker_create(args["tracker"].upper())
-
-# otherwise, for OpenCV 3.3 OR NEWER, we need to explicity call the
-# approrpiate object tracker constructor:
-else:
-    # initialize a dictionary that maps strings to their corresponding
-    # OpenCV object tracker implementations
-    OPENCV_OBJECT_TRACKERS = {
-        "csrt": cv2.TrackerCSRT_create,
-        "kcf": cv2.TrackerKCF_create,
-        "boosting": cv2.TrackerBoosting_create,
-        "mil": cv2.TrackerMIL_create,
-        "tld": cv2.TrackerTLD_create,
-        "medianflow": cv2.TrackerMedianFlow_create,
-        "mosse": cv2.TrackerMOSSE_create
-    }
-
-    # grab the appropriate object tracker using our dictionary of
-    # OpenCV object tracker objects
-    tracker = OPENCV_OBJECT_TRACKERS[args["tracker"]]()
-
-
-# load the input image and construct an input blob for the image
-# by resizing to a fixed 300x300 pixels and then normalizing it
-# (note: normalization is done via the authors of the MobileNet SSD
-# implementation)
 
 
 def detect(frame):
@@ -118,10 +72,42 @@ def detect(frame):
     # show the output image
     return image, results
 
+(major, minor) = cv2.__version__.split(".")[:2]
+# if we are using OpenCV 3.2 OR BEFORE, we can use a special factory
+# function to create our object tracker
+if int(major) == 3 and int(minor) < 3:
+    tracker = cv2.Tracker_create(args["tracker"].upper())
+# otherwise, for OpenCV 3.3 OR NEWER, we need to explicity call the
+# approrpiate object tracker constructor:
+else:
+    # initialize a dictionary that maps strings to their corresponding
+    # OpenCV object tracker implementations
+    OPENCV_OBJECT_TRACKERS = {
+        "csrt": cv2.TrackerCSRT_create,
+        "kcf": cv2.TrackerKCF_create,
+        "boosting": cv2.TrackerBoosting_create,
+        "mil": cv2.TrackerMIL_create,
+        "tld": cv2.TrackerTLD_create,
+        "medianflow": cv2.TrackerMedianFlow_create,
+        "mosse": cv2.TrackerMOSSE_create
+    }
 
-initBB = None
-fps = None
+    # grab the appropriate object tracker using our dictionary of
+    # OpenCV object tracker objects
+    tracker = OPENCV_OBJECT_TRACKERS[args["tracker"]]()
 
+
+# initialize the list of class labels MobileNet SSD was trained to
+# detect, then generate a set of bounding box colors for each class
+CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
+    "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
+    "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
+    "sofa", "train", "tvmonitor"]
+COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
+
+# load our serialized model from disk
+print("[INFO] loading model...")
+net = cv2.dnn.readNetFromCaffe(args["prototxt"], args["model"])
 
 import cv2
 
@@ -132,29 +118,42 @@ contador = 0
 
 while(True):
     # Capture frame-by-frame
-    ret, frame = cap.read()
 
+
+    ret, frame = cap.read()
     (H, W) = frame.shape[:2]
 
     #se o contador for menor que 5, detectar.
-    if contador < 5:
+    while contador < 5:
+        ret, frame = cap.read()
         result_frame, result_tuples = detect(frame)
 
-        for a in result_tuples:
-            if a[0] == "dog":
-                contador +=1
-            else:
-                contador = 0
+        cv2.imshow('frame',result_frame)
 
-        if len(result_tuples) == 0:
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+        if result_tuples == []:
             contador = 0
+        else:
+            contador += 1
 
-        cv2.imshow('Frame',result_frame)
 
-    if contador >= 5:
 
-        if initBB is not None:
-            # grab the new bounding box coordinates of the object
+    # load the input image and construct an input blob for the image
+    # by resizing to a fixed 300x300 pixels and then normalizing it
+    # (note: normalization is done via the authors of the MobileNet SSD
+    # implementation)
+
+    #Depois de detectarmos o objeto por 5 segundos, o tracking deve comecar.
+
+    initBB = None
+    fps = None
+
+    while contador >= 5:
+        ret, frame = cap.read()
+        if contador == 6:
+             # grab the new bounding box coordinates of the object
             (success, box) = tracker.update(frame)
 
             # check to see if the tracking was a success
@@ -180,29 +179,40 @@ while(True):
                 text = "{}: {}".format(k, v)
                 cv2.putText(frame, text, (10, H - ((i * 20) + 20)),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+            if key == ord('q'):
+                break
 
-        # Display the resulting frame
-    cv2.imshow('Frame',frame)
+        if contador == 5:
+            if result_tuples != []:
 
-    if contador >= 5:
-            # ("CLASS", confidence, (x1, y1, x2, y3))
-        x_1, y_1 = result_tuples[0][2]
-        x_2, y_2 = result_tuples[0][3]
-        height = y_2 - y_1
-        width = x_2-x_1
+                # ("CLASS", confidence, (x1, y1, x2, y3))
+                x_1, y_1 = result_tuples[0][2]
+                x_2, y_2 = result_tuples[0][3]
+                height = y_2-y_1
+                width = x_2-x_1
 
-        # select the bounding box of the object we want to track (make
-        # sure you press ENTER or SPACE after selecting the ROI)
-        initBB = (x_1, y_1, abs(width),abs(height))
-        # start OpenCV object tracker using the supplied bounding box
-        # coordinates, then start the FPS throughput estimator as well
-        tracker.init(frame, initBB)
-        fps = FPS().start()
+                # select the bounding box of the object we want to track (make
+                # sure you press ENTER or SPACE after selecting the ROI)
+                initBB = (x_1, y_1, abs(width),abs(height))
+                # start OpenCV object tracker using the supplied bounding box
+                # coordinates, then start the FPS throughput estimator as well
+                tracker.init(frame, initBB)
+                fps = FPS().start()
+                contador = 6
+                
 
-    # if the `q` key was pressed, break from the loop
-    elif cv2.waitKey(1) & 0xFF == ord("q"):
+        if frame is None:
+            break
+
+        cv2.imshow("Tracking", frame)
+        key = cv2.waitKey(1) & 0xFF
+
+        if key == ord('q'):
+            break
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
         break
-
+    
 # When everything done, release the capture
 cap.release()
 cv2.destroyAllWindows()
