@@ -112,7 +112,7 @@ net = cv2.dnn.readNetFromCaffe(args["prototxt"], args["model"])
 import cv2
 
 #cap = cv2.VideoCapture('hall_box_battery_1024.mp4')
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 contador = 0
 
